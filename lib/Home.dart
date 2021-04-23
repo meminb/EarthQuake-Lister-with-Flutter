@@ -9,6 +9,9 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List<Quake> quakes = [];
+
+  bool isSearching = false;
+  TextEditingController controller = TextEditingController();
   @override
   initState() {
     initiate();
@@ -20,9 +23,38 @@ class _HomeState extends State<Home> {
     return Scaffold(
         appBar: AppBar(
           title: Text('Depremler'),
+          actions: [
+            isSearching
+                ? Expanded(
+                    child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: TextFormField(
+                      enableInteractiveSelection: true,
+                      enabled: isSearching,
+                      autofocus: true,
+                      controller: controller,
+                      onChanged: (value) {
+                        search(value);
+                      },
+                    ),
+                  ))
+                : Container(),
+            ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    isSearching = !isSearching;
+                  });
+                },
+                child: Icon(isSearching ? Icons.close : Icons.search)),
+            ElevatedButton(
+                onPressed: () {
+                  initiate();
+                },
+                child: Icon(Icons.refresh))
+          ],
         ),
         body: quakes.length == 0
-            ? Container()
+            ? Container(child: Text("Bu bölgede deprem kaydı bulunamadı."))
             : ListView.builder(
                 itemBuilder: (context, index) {
                   return myItem(index, context);
@@ -31,14 +63,18 @@ class _HomeState extends State<Home> {
   }
 
   Widget myItem(int index, dynamic context) {
-    int a = (30 * quakes[index].magnitude).round();
+    //int hexColorCode = (30 * quakes[index].magnitude).round();
+    double mag = quakes[index].magnitude;
+    int r = 256 - (9 * mag).round();
+    int g = 256 - (22 * mag).round();
+    int b = 256 - (23 * mag).round();
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: Container(
               width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height / 14,
+              height: MediaQuery.of(context).size.height / 16,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -62,7 +98,8 @@ class _HomeState extends State<Home> {
                           height: 30,
                           width: 35,
                           decoration: BoxDecoration(
-                              color: Color.fromARGB(a, a, 0x00, 0x00),
+                              // color: Colors.red[quakes[index].magnitude.round() * 100],
+                              color: Color.fromARGB(0xff, r, g, b),
                               borderRadius: BorderRadius.circular(5)),
                           child: Text(quakes[index].magnitude.toString())))
                 ],
@@ -82,11 +119,11 @@ class _HomeState extends State<Home> {
       String data = elements[0].toString();
 
       List<String> allData = data.split("\n");
-
-      for (var i = 7; i < 500; i++) {
+      quakes.clear();
+      for (var i = 6; i < 500; i++) {
         var temp = allData[i].split(RegExp(r" +"));
         for (var i = 0; i < temp.length; i++) {
-          print("$i  ${temp[i]}");
+          // print("$i  ${temp[i]}");
         }
 
         quakes.add(new Quake(
@@ -94,6 +131,25 @@ class _HomeState extends State<Home> {
             date: temp[0] + " " + temp[1].substring(0, 5),
             magnitude: double.parse(temp[6]))); /**/
       }
+      setState(() {});
+    }
+  }
+
+  search(String text) {
+    if (text.isEmpty) {
+      initiate();
+    } else {
+      // quakes.clear();
+      List<Quake> temp = [];
+      for (var item in quakes) {
+        // print(item.center.toLowerCase());
+        if (item.center.toLowerCase().contains(text.toLowerCase())) {
+          // temp.add(item);
+          temp.insert(0, item);
+        }
+      }
+      quakes.clear();
+      quakes.addAll(temp);
       setState(() {});
     }
   }
